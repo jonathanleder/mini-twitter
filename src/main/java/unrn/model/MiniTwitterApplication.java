@@ -2,8 +2,9 @@
 
 package unrn.model;
 
-import util.EmfBuilder;
 import jakarta.persistence.EntityManagerFactory;
+import unrn.service.TwitterService;
+import unrn.util.EmfBuilder;
 
 public class MiniTwitterApplication {
 

@@ -1,4 +1,4 @@
-package util;
+package unrn.util;
 
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceConfiguration;

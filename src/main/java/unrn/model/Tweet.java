@@ -66,6 +66,9 @@ public class Tweet {
     public String texto() {
         return text;
     }
+     public String textoDeRetweet() {
+        return this.origen.texto();
+    }
 
     public Tweet origen() {
         return origen;
