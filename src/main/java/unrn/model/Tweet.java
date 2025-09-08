@@ -1,13 +1,32 @@
 package unrn.model;
 
+import jakarta.persistence.*;
 
+
+@Entity
+@Table(name = "tweets")
 public class Tweet {
     static final String ERROR_TEXTO = "El texto del tweet debe tener entre 1 y 280 caracteres";
     static final String ERROR_RETWEET_PROPIO = "No se puede retweetear un tweet propio";
 
-    private final Usuario autor;
-    private final String text;
-    private final Tweet origen;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario autor;
+
+    @Column(name = "texto", nullable = true, length = 280)
+    private String text;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tweet_origen_id")
+    private Tweet origen;
+
+    protected Tweet() {
+        // Constructor requerido por JPA
+    }
 
     // Tweet normal
     public Tweet(Usuario autor, String text) {
@@ -50,5 +69,22 @@ public class Tweet {
 
     public Tweet origen() {
         return origen;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    // Setter requerido por JPA y para relación bidireccional
+    protected void setAutor(Usuario autor) {
+        this.autor = autor;
+    }
+
+    protected void setText(String text) {
+        this.text = text;
+    }
+
+    protected void setOrigen(Tweet origen) {
+        this.origen = origen;
     }
 }

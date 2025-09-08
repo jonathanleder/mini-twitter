@@ -69,27 +69,13 @@ cliente. Luego se escriben los tests de colaboración entre objetos (con mocks) 
   y [Hibernate 7](https://docs.jboss.org/hibernate/orm/7.0/introduction/html_single/Hibernate_Introduction.html)
 
 - Agregamos dependencias en pom.xml
-- Definimos cuál clase representa el sistema.
-    - Será `AgendaTelefonica`
-    - No la vamos a mapear como entidad porque manejar los contactos como collecion mapeada uno a muchos, dado que la
-      cantidad de contactos puede ser grande sabemos que no performa bien.
-    - Esta clase representa la entrada a la lógica de negocios del sistema.
-    - Responsabilidades:
-        - Gestiona las Transacciones
-        - Sus servicios reciben tipos primitivos, o estructuras de datos simples.
-        - Crea instancias del modelo, invoca sus servicios y los coordina.
-        - Persiste o remueve si es necesario.
+
 - Agrego Mapeos
     - Entidades con Id`@Entity`, `@Id`
     - Lombok: `@NoArgsConstructor(access = AccessLevel.PROTECTED)`, `@Getter(AccessLevel.PRIVATE)`, `@Setter(
       AccessLevel.PRIVATE)`
     - Y relaciones.
-- Al implementar `AgendaTelefonica.agregarContacto(...)`
-    - Se vuelve necesario validar el nombre de contacto cuya validación se encuentra en `Contacto`.
-    - ¿Cómo reuso esa validación? Con un value object:`NombreDeContacto`.
-- Al implementar `AgendaTelefonica.listarContactos()`
-    - No puedo devolver grafos de objetos proxieados.
-    - Además tengo que paginar si devuelvo colecciones.
+
 
 ## Testing Integracion
 
