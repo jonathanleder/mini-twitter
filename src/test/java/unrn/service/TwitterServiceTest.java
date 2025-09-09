@@ -3,7 +3,7 @@ package unrn.service;
 
 import org.junit.jupiter.api.*;
 import unrn.model.Tweet;
-import unrn.model.Usuario;
+
 import unrn.service.TwitterService;
 import unrn.util.EmfBuilder;
 

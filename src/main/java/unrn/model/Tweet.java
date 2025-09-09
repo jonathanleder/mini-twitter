@@ -1,10 +1,13 @@
 package unrn.model;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Setter;
 
 
 @Entity
 @Table(name = "tweets")
+@Setter(AccessLevel.PRIVATE)
 public class Tweet {
     static final String ERROR_TEXTO = "El texto del tweet debe tener entre 1 y 280 caracteres";
     static final String ERROR_RETWEET_PROPIO = "No se puede retweetear un tweet propio";

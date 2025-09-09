@@ -1,4 +1,7 @@
+
 package unrn.repositorios;
+
+import java.util.List;
 
 import unrn.model.Usuario;
 import java.util.Optional;
@@ -8,4 +11,5 @@ public interface UsuarioRepository {
     void agregar(Usuario usuario);
     void eliminar(Usuario usuario);
     Optional<Usuario> buscarPorId(Long id);
+    List<Usuario> listarTodos();
 }

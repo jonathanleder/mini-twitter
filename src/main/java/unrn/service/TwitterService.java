@@ -1,6 +1,4 @@
-
 package unrn.service;
-
 
 import jakarta.persistence.EntityManagerFactory;
 import unrn.model.Tweet;
@@ -16,6 +14,13 @@ public class TwitterService {
 
 	public TwitterService(EntityManagerFactory emf) {
 		this.emf = emf;
+	}
+
+	public List<Usuario> listarTodosLosUsuarios() {
+		return emf.callInTransaction(em -> {
+			UsuarioRepository usuarioRepo = RepositoryFactory.usuarioRepository(em);
+			return usuarioRepo.listarTodos();
+		});
 	}
 
 	// Alta de usuario

@@ -1,4 +1,7 @@
+
 package unrn.repositorios;
+
+import java.util.List;
 
 import jakarta.persistence.EntityManager;
 import unrn.model.Usuario;
@@ -31,5 +34,11 @@ class JpaUsuarioRepository implements UsuarioRepository {
     @Override
     public Optional<Usuario> buscarPorId(Long id) {
         return Optional.ofNullable(em.find(Usuario.class, id));
+    }
+
+    @Override
+    public List<Usuario> listarTodos() {
+        var q = em.createQuery("SELECT u FROM Usuario u", Usuario.class);
+        return q.getResultList();
     }
 }

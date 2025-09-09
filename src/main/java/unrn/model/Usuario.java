@@ -1,6 +1,9 @@
 package unrn.model;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Setter;
+
 import java.util.*;
 
 import java.util.ArrayList;
@@ -10,6 +13,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "usuarios")
+@Setter(AccessLevel.PRIVATE)
 public class Usuario {
 
 
