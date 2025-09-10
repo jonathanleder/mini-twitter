@@ -1,221 +1,116 @@
-# Taller - Persistencia, Servicios Web y Testing Automatizado
+# Mini Twitter API
 
-## Diseño Bottom-up vs Top-Down
+Una implementación de una API RESTful para un servicio de microblogging similar a Twitter, construida con Spring Boot y JPA/Hibernate.
 
-El diseño Top-Down consiste en comenzar con una visión general del sistema y descomponerla en partes más pequeñas y
-específicas. Primero se define la arquitectura, luego se diseñan los componentes individuales.
+## 📝 Características
 
-El diseño Bottom-up consiste en construir primero componentes individuales o de bajo nivel (en Objetos es el Modelo de
-Dominio), y luego integrarlos con compontes de más alto nivel formando subsistemas y finalmente el sistema completo.
+- Gestión de usuarios (crear, listar, buscar, eliminar)
+- Publicación de tweets
+- Sistema de retweets
+- Validación de datos
+- Pruebas unitarias y de integración
 
-## TDD Inside-out vs Outside-in
+## 🚀 Tecnologías
 
-El enfoque **inside-out** comienza escribiendo tests unitarios de bajo nivel sobre las clases del dominio, y
-gradualmente se construye hacia fuera, integrando otros componentes del sistema.
+- **Backend**: Java 21, Spring Boot 3.x
+- **Base de datos**: H2 (en memoria para pruebas), configurable para otras bases de datos
+- **Persistencia**: JPA 3.2, Hibernate 7
+- **Testing**: JUnit 5, MockMvc, TestContainers
+- **Herramientas**: Lombok, Maven
 
-- Se empieza por el **núcleo de la lógica de negocio**. En objetos, el modelo de dominio.
-- Los tests unitarios guían la implementación de clases individuales.
-- Luego se agregan capas externas como servicios, controladores, APIs.
-- Conocido como: método clásico, Chicago school.
-- **Menos riesgo** de escribir lógica fuera del modelo de dominio.
-- Poca necesidad de usar fakes/mocks.
+## 📋 Requisitos
 
-El enfoque **outside-in** comienza escribiendo tests de aceptación o de alto nivel desde el punto de vista del usuario o
-cliente. Luego se escriben los tests de colaboración entre objetos (con mocks) para guiar el diseño interno.
+- Java 21 o superior
+- Maven 3.6+
+- (Opcional) Docker para pruebas con TestContainers
 
-- Se parte del **comportamiento visible del sistema**.
-- Primero se escriben tests de aceptación o de capa externa (como APIs o UI).
-- Se crean objetos simulados (*fakes*) para las dependencias internas aún no implementadas.
-- El diseño interno emerge a medida que se satisfacen esos contratos.
-- Conocido como: London school, Mockist style
-- Aparece en el libro *Growing Object-Oriented Software, Guided by Tests*, de Steve Freeman y Nat Pryce.
+## 🛠️ Instalación
 
-## Requerimientos (Contactos Telefónicos)
+1. Clonar el repositorio:
+   ```bash
+   git clone https://github.com/tu-usuario/mini-twitter.git
+   cd mini-twitter
+   ```
 
-- Un contacto conoce una lista de números de teléfono
-- Un contacto posee un nombre que no debe tener más de 35 caracteres ni menos de 2.
-- Un número de teléfono tiene un código de área y el número en sí.
-- El código de áre tiene 4 dígitos el número un máximo de 7 caracteres y mínimo de 6.
-- Una agenda conoce todos sus contactos y permite listarlos.
-- La agenda permite agregar contactos.
-- No deben existir contactos con el mismo nombre.
+2. Construir el proyecto:
+   ```bash
+   mvn clean install
+   ```
 
-## Testing Unitario
+3. Ejecutar la aplicación:
+   ```bash
+   mvn spring-boot:run
+   ```
 
-- Usamos JUnit
-- Nombre claro y descriptivo de la forma: *cuestionATestear_resultadoEsperado*
-- Estructura del test:
-    - Setup: Preparar el escenario
-    - Ejercitación: Ejecutar la acción a probar
-    - Verificación: Comprobar el resultado esperado
-- Utiliza mensajes que expliquen el propósito de la verificación.
-    - Por ejemplo:
-      ```java
-      assertEquals(expectedValue, actualValue, "El valor esperado no coincide con el valor actual");
-      ```
-- Verifica excepciones correctamente
-    - Utiliza `assertThrows` para verificar que se lanza la excepción esperada.
-    - Ejemplo:
-      ```java
-        var ex = assertThrows(RuntimeException.class, () -> {
-                // Código que debería lanzar la excepción 
-            });
-            assertEquals("Mensaje de error esperado", ex.getMessage());
-        ```
+La aplicación estará disponible en `http://localhost:8080`
 
-## Persistencia
+## 📚 Documentación de la API
 
-- Para persistencia usaremos JPA 3.2
-  y [Hibernate 7](https://docs.jboss.org/hibernate/orm/7.0/introduction/html_single/Hibernate_Introduction.html)
+### Usuarios
 
-- Agregamos dependencias en pom.xml
+- `POST /usuarios` - Crear un nuevo usuario
+  ```json
+  {
+    "username": "nombreUsuario"
+  }
+  ```
 
-- Agrego Mapeos
-    - Entidades con Id`@Entity`, `@Id`
-    - Lombok: `@NoArgsConstructor(access = AccessLevel.PROTECTED)`, `@Getter(AccessLevel.PRIVATE)`, `@Setter(
-      AccessLevel.PRIVATE)`
-    - Y relaciones.
+- `GET /usuarios` - Listar todos los usuarios
+- `GET /usuarios/{username}` - Obtener un usuario por su nombre de usuario
+- `DELETE /usuarios/{id}` - Eliminar un usuario por su ID
 
+### Tweets
 
-## Testing Integracion
+- `POST /tweets` - Crear un nuevo tweet
+  ```json
+  {
+    "usuarioId": 1,
+    "texto": "Contenido del tweet"
+  }
+  ```
 
-- [Hibernate 7 Docs](https://docs.jboss.org/hibernate/orm/7.0/introduction/html_single/Hibernate_Introduction.html#testing).
-- ¿Qué testeamos aca?
-    - End to end desde la clase de entrada a mi modelo, hasta la BD
-    - Cambiamos la BD real para usar una en memoria (para que sea más rapido).
-    - Cada test debe iniciar con la BD en el mismo estado (no hay dependencia entre los tests idealmente).
-    - No re-testear lógica cubierta por tests del modelo.
-    - Verifica persistencia real y recuperación de objetos de la BD
+- `POST /tweets/retweet` - Crear un retweet
+  ```json
+  {
+    "usuarioId": 2,
+    "tweetOrigenId": 1
+  }
+  ```
 
-### Repositorios
+- `GET /tweets/usuario/{usuarioId}` - Listar tweets de un usuario
 
-> For each type of object that needs global access, create an object that can provide the illusion of an in-memory
-> collection of all objects of that type. Set up access through a well-known global interface. Provide methods to *add*
-> and *remove* objects, which will encapsulate the actual insertion or removal of data in the data store. Provide
-> methods that *select objects based on some criteria* and return *fully instantiated objects* or collections of objects
-> whose attribute values meet the criteria, thereby encapsulating the actual storage and query technology. Provide
-> REPOSITORIES only for AGGREGATE roots that actually need direct access. Keep the client focused on the model,
-> delegating all object storage and access to the REPOSITORIES. **Eric Evans DDD Book**.
+## 🧪 Testing
 
-- Collection-like interface. Con semántica de un Set (sin repetidos).
-    - add(Contacto contacto)
-    - remove(Contacto contacto)
-    - Optional<Contacto> findByName(String name)
-    - Optional<Contacto> findById(Long id)
-    - List<Contacto> findXXX(...)
-- Un Repository por agregate root.
-- Se instancian recibiendo la transacción iniciada por quien lo inova.
-- Otra idea clave es que no necesitas "volver a guardar" los objetos modificados que ya están en el Repositorio.
-  Piensa nuevamente en cómo modificarías un objeto que forma parte de una colección. En realidad, es muy simple: solo
-  recuperarías de la colección la referencia al objeto que deseas modificar y luego le pedirías al objeto que ejecute
-  algún comportamiento de transición de estado invocando un método de comando. Implementing Domain Driven Design Vaughn
-  Vernon.
-    - Esto es posible por persistencia por alcance. No tiene que ver con el patron repositorio, sino que tiene que ver
-      con el ORM utilizado para implementar el repositorio.
+El proyecto incluye dos tipos de pruebas:
 
-## Servicios Web
+### Pruebas Unitarias
+- Ubicación: `src/test/java/unrn/web/*Test.java`
+- Prueban los controladores de forma aislada usando mocks
+- Ejecutar con: `mvn test`
 
-En términos de arquitectura de software, un `servicio` es una aplicación o proceso que se encuentra *escuchando* en un
-determinado host y puerto. Esperando recibir solicitudes de otros programas (clientes).
-Un **servicio web** es un tipo especial de servicio que:
+### Pruebas de Integración
+- Ubicación: `src/test/java/unrn/web/*IT.java`
+- Prueban la aplicación completa con una base de datos en memoria
+- Ejecutar con: `mvn verify`
 
-- Utiliza protocolos web como HTTP o HTTPS para comunicarse,
-- Expone su funcionalidad a través de URLs,
+## 📊 Cobertura de Código
 
-Se llama *web* porque se construye sobre tecnologías propias de la web (como HTTP, URIs y formatos como JSON o XML).
+Para generar un informe de cobertura:
 
-Los servicios web permiten:
+```bash
+mvn jacoco:report
+```
 
-- Separar el frontend (cliente) del backend (servidor),
-- Reutilizar lógica de negocio o datos en distintas interfaces (por ejemplo, web, móvil, otros sistemas),
+El informe estará disponible en: `target/site/jacoco/index.html`
 
-### Reglas generales para nombres de URIs API REST
+## 🤝 Contribución
 
-- ✅ Usar **nombres de recursos en plural**
-- ✅ Usar **nombres sustantivos, no verbos**
-- ✅ Evitar extensiones como `.json`, `.xml` en la URI
-- ✅ El **verbo va en el método HTTP**, no en la URI
+1. Haz un fork del proyecto
+2. Crea una rama para tu característica (`git checkout -b feature/nueva-caracteristica`)
+3. Haz commit de tus cambios (`git commit -am 'Agrega nueva característica'`)
+4. Haz push a la rama (`git push origin feature/nueva-caracteristica`)
+5. Abre un Pull Request
 
-### 🔸 GET
+## 📄 Licencia
 
-| Acción                  | URI ejemplo                      | Descripción                     |
-|-------------------------|----------------------------------|---------------------------------|
-| Obtener todos           | `GET /users`                     | Lista de usuarios               |
-| Obtener uno             | `GET /users/{id}`                | Usuario por ID                  |
-| Sub-recursos            | `GET /users/{id}/posts`          | Posts del usuario               |
-| Filtro con query params | `GET /products?category=zapatos` | Filtrar productos por categoría |
-
----
-
-### 🔸 POST
-
-| Acción            | URI ejemplo                  | Descripción                    |
-|-------------------|------------------------------|--------------------------------|
-| Crear recurso     | `POST /users`                | Crear un nuevo usuario         |
-| Crear sub-recurso | `POST /users/{id}/telefonos` | Crear un post para ese usuario |
-
----
-
-### 🔸 PUT
-
-| Acción             | URI ejemplo       | Descripción                        |
-|--------------------|-------------------|------------------------------------|
-| Reemplazar recurso | `PUT /users/{id}` | Reemplaza completamente al usuario |
-
----
-
-### 🔸 DELETE
-
-| Acción           | URI ejemplo          | Descripción             |
-|------------------|----------------------|-------------------------|
-| Eliminar recurso | `DELETE /users/{id}` | Borra un usuario por ID |
-
-## Otros Casos
-
-| Caso           | URI ejemplo                | Descripción        |
-|----------------|----------------------------|--------------------|
-| Login          | `POST /auth/login`         | Autenticación      |
-| Logout         | `POST /auth/logout`        | Cierre de sesión   |
-| Acción puntual | `POST /orders/{id}/cancel` | Cancelar una orden |
-
-## ✅ Códigos de respuesta recomendados
-
-| Método | Código recomendado          | Cuándo usarlo                          |
-|--------|-----------------------------|----------------------------------------|
-| GET    | `200 OK`                    | Recurso(s) obtenido(s) correctamente   |
-| POST   | `201 Created`               | Recurso creado exitosamente            |
-| PUT    | `200 OK` / `204 No Content` | Actualización o creación de recurso    |
-| DELETE | `200 OK` / `204 No Content` | Ok o Eliminación exitosa sin contenido |
-
-### SpringBoot
-
-### Exception Handling Global
-
-- Queremos manejar las excepciones de forma global y para ello el framework Web que usamos en general nos da una forma
-  de hacerlo.
-- Usar `@RestControllerAdvice` para anotar una clase que maneje excepciones globalmente.
-- Dentro de esa clase, podemos definir métodos que manejen excepciones específicas usando
-  `@ExceptionHandler(Exception.class)`.
-
-### Testing Integracion Servicios Web
-
-- MockMvc and WebTestClient: [Spring Docs](https://docs.spring.io/spring-framework/reference/testing.html).
-- MockMvc ejecuta el controller y todo el stack en memoria, sin servidor, sin red. Perfecto para tests de integración
-  rápidos y realistas a nivel de capa web.
-- La otra es WebTestCliente como cliente y levantar un server real con @SpringBootTest(webEnvironment =
-  WebEnvironment.DEFINED_PORT o RANDOM_PORT))
-- Teniendo Tests escritos unitario y de integración a nivel servicio. ¿Qué podemos testear de la capa web?
-    - Todo lo relacionado a las pocas líneas de código que debería haber en el controlador. Pero principalmente:
-        - Que lleguen bien los parametros
-        - Que retorne el json que esperamos en el formato que esperamos
-        - Que retorne errores en el formato que esperamos.
-
-## Troubleshooting
-
-- Si tenes este error:
-    - jakarta.servlet.ServletException: Request processing failed: java.lang.IllegalArgumentException: Name for argument
-      of type [int] not specified, and parameter name information not available via reflection. Ensure that the compiler
-      uses the '-parameters' flag.
-- En Settings > Build, Execution, Deployment > Compiler > Java Compiler, en Javac Options, agregar:
-    - -parameters
-- Luego ReBuild Project
+Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.

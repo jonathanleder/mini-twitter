@@ -25,7 +25,7 @@ public class TwitterGlobalExceptionHandler {
 
     @ExceptionHandler({HttpMessageNotReadableException.class,
             MissingServletRequestParameterException.class})
-    public ResponseEntity<ErrorResponse> handleSpringMVCParams() {
+    public ResponseEntity<ErrorResponse> handleSpringMVCParams(Exception ex) {
         ErrorResponse error = new ErrorResponse(
                 "Parámetros inválidos");
         return ResponseEntity.badRequest().body(error);

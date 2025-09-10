@@ -1,6 +1,6 @@
 # Descripcion general
 
-- Este es un proyecto escrito en Java 23 utilizando el paradigma orientado a objetos.
+- Este es un proyecto escrito en Java 21 utilizando el paradigma orientado a objetos.
 - El modelo de dominio es donde se implementan todas las reglas de negocio.
 
 ## Estructura de Carpetas

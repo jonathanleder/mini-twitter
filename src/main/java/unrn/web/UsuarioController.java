@@ -2,7 +2,6 @@ package unrn.web;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import unrn.DTOs.NuevoUsuario;
 import unrn.DTOs.UsuarioDto;
 import unrn.service.TwitterService;
@@ -29,10 +28,10 @@ public class UsuarioController {
 
     @GetMapping
     public ResponseEntity<?> listarUsuarios() {
-        var usuarios = service.listarTodosLosUsuarios()
-            .stream()
-            .map(u -> new UsuarioDto(u.getId(), u.obtenerUserName()))
-            .toList();
+        var usuarios = service.listarUsuarios()
+                .stream()
+                .map(u -> new UsuarioDto(u.getId(), u.obtenerUserName()))
+                .toList();
         return ResponseEntity.ok(usuarios);
     }
 
