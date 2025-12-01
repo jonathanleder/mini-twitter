@@ -1,3 +1,15 @@
 package unrn.DTOs;
 
-public record TweetDto(Long id, String texto, Long origenId) {}
+import java.time.LocalDateTime;
+
+public record TweetDto(
+        Long id,
+        String texto,
+        String autorUsername,
+        LocalDateTime fecha,
+        Long origenId,
+        String tweetOriginalTexto,
+        String usuarioOriginal,
+        String usuarioRetweet,
+        Boolean esRetweet) {
+}

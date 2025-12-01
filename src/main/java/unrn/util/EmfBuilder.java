@@ -9,11 +9,11 @@ import unrn.model.Usuario;
 import unrn.model.Tweet;
 
 public class EmfBuilder {
-    public static final String DB_USER = "app";
-    public static final String DB_PWD = "app";
-  
-    public static final String IN_MEMORY_DB_URL = "jdbc:derby:memory:minitwitter;create=true";
-    public static final String CLIENT_DB_URL = "jdbc:derby://localhost:1527/minitwitter;create=true";
+    public static final String DB_USER = "sa";
+    public static final String DB_PWD = "";
+
+    public static final String IN_MEMORY_DB_URL = "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false";
+    public static final String CLIENT_DB_URL = "jdbc:h2:tcp://localhost/~/minitwitter";
     private EntityManagerFactory emf;
     private PersistenceConfiguration config;
     private String testDataFileName = "tests-data.sql";
@@ -50,8 +50,7 @@ public class EmfBuilder {
     }
 
     public EmfBuilder withTestData() {
-        config.property(AvailableSettings.JAKARTA_HBM2DDL_LOAD_SCRIPT_SOURCE
-                , testDataFileName);
+        config.property(AvailableSettings.JAKARTA_HBM2DDL_LOAD_SCRIPT_SOURCE, testDataFileName);
         return this;
     }
 

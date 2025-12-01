@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Setter;
 
-
 @Entity
 @Table(name = "tweets")
 @Setter(AccessLevel.PRIVATE)
@@ -27,6 +26,9 @@ public class Tweet {
     @JoinColumn(name = "tweet_origen_id")
     private Tweet origen;
 
+    @Column(name = "fecha_creacion", nullable = false, updatable = false)
+    private java.time.LocalDateTime fechaCreacion;
+
     protected Tweet() {
         // Constructor requerido por JPA
     }
@@ -37,6 +39,7 @@ public class Tweet {
         this.autor = autor;
         this.text = text;
         this.origen = null;
+        this.fechaCreacion = java.time.LocalDateTime.now();
     }
 
     // Retweet
@@ -45,6 +48,7 @@ public class Tweet {
         this.autor = autor;
         this.text = null;
         this.origen = origen;
+        this.fechaCreacion = java.time.LocalDateTime.now();
     }
 
     private void assertTextoValido(String text) {
@@ -69,12 +73,17 @@ public class Tweet {
     public String texto() {
         return text;
     }
-     public String textoDeRetweet() {
+
+    public String textoDeRetweet() {
         return this.origen.texto();
     }
 
     public Tweet origen() {
         return origen;
+    }
+
+    public java.time.LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
     }
 
     public Long getId() {

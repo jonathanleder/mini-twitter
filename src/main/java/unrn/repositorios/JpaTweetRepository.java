@@ -34,4 +34,17 @@ class JpaTweetRepository implements TweetRepository {
         q.setParameter("usuario", usuario);
         return q.getResultList();
     }
+
+    @Override
+    public List<Tweet> findAll() {
+        var q = em.createQuery("SELECT t FROM Tweet t", Tweet.class);
+        return q.getResultList();
+    }
+
+    @Override
+    public List<Tweet> buscarRetweetsDeOrigen(Long tweetOrigenId) {
+        var q = em.createQuery("SELECT t FROM Tweet t WHERE t.origen.id = :origenId", Tweet.class);
+        q.setParameter("origenId", tweetOrigenId);
+        return q.getResultList();
+    }
 }

@@ -1,21 +1,86 @@
+# Maven
 target/
-!.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.backup
+release.properties
+dependency-reduced-pom.xml
+.flattened-pom.xml
 
+# Compiled class file
+*.class
+
+# Log file
+*.log
+logs/
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs
+hs_err_pid*
+
+# IDE Specific
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS Specific
+.DS_Store
+Thumbs.db
+.env.local
+.env.*.local
+
+# Database
+*.sqlite
+*.sqlite3
 derby.log
 
-### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
-.idea/workspace.xml
-*.iws
-*.iml
-*.ipr
+# Test Coverage
+jacoco.exec
+.coverage
+.pytest_cache/
 
-### Eclipse ###
+# Node (if frontend is included)
+node_modules/
+dist/
+npm-debug.log
+yarn-error.log
+
+# Build output
+out/
+build/
+
+# IntelliJ IDEA
+*.iml
+*.iws
+*.ipr
+.idea_modules/
+out/
+
+# Eclipse
 .apt_generated
 .classpath
 .factorypath
@@ -24,7 +89,7 @@ derby.log
 .springBeans
 .sts4-cache
 
-### NetBeans ###
+# NetBeans
 /nbproject/private/
 /nbbuild/
 /dist/
@@ -34,8 +99,33 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
-.vscode/
+# Gradle
+.gradle
+**/build/
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-### Mac OS ###
-.DS_Store
+# VS Code
+.vscode/
+*.code-workspace
+
+# Local environment variables
+.env
+.env.local
+.env.*.local
+
+# Keep Maven wrapper
+!.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Mac OS
+.AppleDouble
+.LSOverride
+
+# Windows
+Desktop.ini
+
+# JaCoCo coverage
+*.exec

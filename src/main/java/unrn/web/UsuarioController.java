@@ -1,6 +1,7 @@
 package unrn.web;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import unrn.DTOs.NuevoUsuario;
 import unrn.DTOs.UsuarioDto;
@@ -8,13 +9,13 @@ import unrn.service.TwitterService;
 
 @RestController
 @RequestMapping("/usuarios")
+@CrossOrigin(origins = "http://localhost:5173")
 public class UsuarioController {
     private final TwitterService service;
 
     public UsuarioController(TwitterService service) {
         this.service = service;
     }
-
 
     @PostMapping
     public ResponseEntity<?> crearUsuario(@RequestBody NuevoUsuario nuevoUsuario) {
@@ -27,6 +28,7 @@ public class UsuarioController {
     }
 
     @GetMapping
+    @Transactional(readOnly = true)
     public ResponseEntity<?> listarUsuarios() {
         var usuarios = service.listarUsuarios()
                 .stream()
@@ -36,6 +38,7 @@ public class UsuarioController {
     }
 
     @GetMapping("/{username}")
+    @Transactional(readOnly = true)
     public ResponseEntity<?> buscarUsuario(@PathVariable String username) {
         return service.buscarUsuarioPorUserName(username)
                 .map(u -> ResponseEntity.ok(new UsuarioDto(u.getId(), u.obtenerUserName())))

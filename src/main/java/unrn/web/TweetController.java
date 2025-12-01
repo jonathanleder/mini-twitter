@@ -3,15 +3,14 @@ package unrn.web;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import unrn.DTOs.NuevoRetweet;
-import unrn.DTOs.NuevoTweet;
-import unrn.DTOs.TweetDto;
+import unrn.DTOs.*;
 import unrn.service.TwitterService;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/tweets")
+@CrossOrigin(origins = "http://localhost:5173")
 public class TweetController {
     private final TwitterService service;
 
@@ -19,38 +18,92 @@ public class TweetController {
         this.service = service;
     }
 
+    private TweetDto mapTweetToDto(unrn.model.Tweet t) {
+        return new TweetDto(
+                t.getId(),
+                t.texto(),
+                t.autor().obtenerUserName(),
+                t.getFechaCreacion(),
+                t.origen() != null ? t.origen().getId() : null,
+                t.origen() != null ? t.origen().texto() : null,
+                t.origen() != null ? t.origen().autor().obtenerUserName() : null,
+                t.origen() != null ? t.autor().obtenerUserName() : null,
+                t.origen() != null);
+    }
+
     @PostMapping
     public ResponseEntity<?> crearTweet(@RequestBody NuevoTweet nuevoTweet) {
-        try {
-            service.crearTweet(nuevoTweet.usuarioId(), nuevoTweet.texto());
-            return ResponseEntity.status(201).build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        service.crearTweet(nuevoTweet.usuarioId(), nuevoTweet.texto());
+        return ResponseEntity.status(201).build();
     }
 
     @PostMapping("/retweet")
     public ResponseEntity<?> crearRetweet(@RequestBody NuevoRetweet nuevoRetweet) {
-        try {
-            service.crearRetweet(nuevoRetweet.usuarioId(), nuevoRetweet.tweetOrigenId());
-            return ResponseEntity.status(201).build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        service.crearRetweet(nuevoRetweet.usuarioId(), nuevoRetweet.tweetOrigenId());
+        return ResponseEntity.status(201).build();
     }
 
     @GetMapping("/usuario/{usuarioId}")
-    public ResponseEntity<?> listarTweetsDeUsuario(@PathVariable Long usuarioId) {
-        try {
-            List<TweetDto> tweets = service.listarTweetsDeUsuario(usuarioId).stream()
-                    .map(t -> new TweetDto(
-                            t.getId(),
-                            t.texto(),
-                            t.origen() != null ? t.origen().getId() : null
-                    )).toList();
-            return ResponseEntity.ok(tweets);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<?> listarTweetsDeUsuario(
+            @PathVariable Long usuarioId,
+            @RequestParam(defaultValue = "15") int limit,
+            @RequestParam(defaultValue = "0") int offset) {
+        if (limit < 1 || limit > 100)
+            limit = 15;
+        if (offset < 0)
+            offset = 0;
+
+        List<TweetDto> content = service.listarTweetsDeUsuarioConLimitDto(usuarioId, limit, offset);
+        int total = service.contarTweetsDeUsuario(usuarioId);
+        boolean hasMore = offset + content.size() < total;
+
+        TweetsUsuarioResponseDto response = new TweetsUsuarioResponseDto(
+                content,
+                limit,
+                offset,
+                total,
+                hasMore);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<?> listarTodosLosTweets() {
+        List<TweetDto> tweets = service.listarTodosLosTweets().stream()
+                .map(this::mapTweetToDto)
+                .toList();
+        return ResponseEntity.ok(tweets);
+    }
+
+    // Feed paginado (tweets normales sin retweets)
+    @GetMapping("/feed")
+    public ResponseEntity<?> listarFeedPaginado(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        if (page < 0)
+            page = 0;
+        if (size < 1 || size > 100)
+            size = 10;
+
+        List<TweetDto> content = service.listarFeedPaginadoDto(page, size);
+        int totalElements = service.contarTweetsNormales();
+        int totalPages = (totalElements + size - 1) / size;
+
+        FeedResponseDto response = new FeedResponseDto(
+                content,
+                totalPages,
+                page,
+                size,
+                totalElements,
+                page < totalPages - 1,
+                page > 0);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{tweetId}")
+    public ResponseEntity<?> eliminarTweet(@PathVariable Long tweetId) {
+        service.eliminarTweet(tweetId);
+        return ResponseEntity.noContent().build();
     }
 }

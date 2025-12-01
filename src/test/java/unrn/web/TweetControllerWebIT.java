@@ -23,13 +23,11 @@ import java.util.List;
 @AutoConfigureMockMvc
 @org.springframework.test.context.ActiveProfiles("test-integracion")
 
-
 class TweetControllerWebIT {
         private static final String USERNAME = "tweetuser";
         private static final String RETWEETER = "retweeter";
         private static final String TEXTO_TWEET = "Hola Twitter!";
         private static final String TEXTO_ORIGINAL = "Original";
-
 
         @Autowired
         private EntityManagerFactory emf;
@@ -52,7 +50,8 @@ class TweetControllerWebIT {
                                 .andReturn();
                 int status = createResult.getResponse().getStatus();
                 if (status != 201) {
-                        throw new RuntimeException("No se pudo crear el usuario: " + createResult.getResponse().getContentAsString());
+                        throw new RuntimeException("No se pudo crear el usuario: "
+                                        + createResult.getResponse().getContentAsString());
                 }
                 var result = mockMvc.perform(get("/usuarios/" + username)
                                 .accept(MediaType.APPLICATION_JSON))
@@ -65,19 +64,19 @@ class TweetControllerWebIT {
 
         private Long crearTweetYObtenerId(Long usuarioId, String texto) throws Exception {
                 var tweetResult = mockMvc.perform(post("/tweets")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"usuarioId\":" + usuarioId + ",\"texto\":\"" + texto + "\"}"))
-                        .andReturn();
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"usuarioId\":" + usuarioId + ",\"texto\":\"" + texto + "\"}"))
+                                .andReturn();
                 assertEquals(201, tweetResult.getResponse().getStatus(), "El tweet no se creó correctamente");
                 // Obtener id del tweet creado
                 var listarResult = mockMvc.perform(get("/tweets/usuario/" + usuarioId)
-                        .accept(MediaType.APPLICATION_JSON))
-                        .andExpect(status().isOk())
-                        .andReturn();
+                                .accept(MediaType.APPLICATION_JSON))
+                                .andExpect(status().isOk())
+                                .andReturn();
                 String tweetsJson = listarResult.getResponse().getContentAsString();
-                Number idNum = JsonPath.read(tweetsJson, "$[0].id");
+                Number idNum = JsonPath.read(tweetsJson, "$.tweets[0].id");
                 return idNum.longValue();
-            }
+        }
 
         @Test
         @DisplayName("POST /tweets crea un tweet y lo lista correctamente")
@@ -90,16 +89,16 @@ class TweetControllerWebIT {
                                 .andExpect(status().isOk())
                                 .andReturn();
                 String tweetsJson = listarResult.getResponse().getContentAsString();
-                List<?> tweets = JsonPath.read(tweetsJson, "$[*]");
-                        assertAll("Verificar tweet listado",
+                List<?> tweets = JsonPath.read(tweetsJson, "$.tweets[*]");
+                assertAll("Verificar tweet listado",
                                 () -> assertFalse(tweets.isEmpty(), "La lista de tweets no debe estar vacía"),
                                 () -> {
-                                        Number idNum = JsonPath.read(tweetsJson, "$[0].id");
+                                        Number idNum = JsonPath.read(tweetsJson, "$.tweets[0].id");
                                         assertEquals(tweetId, idNum.longValue());
                                 },
-                                () -> assertEquals(TEXTO_TWEET, JsonPath.read(tweetsJson, "$[0].texto")),
-                                () -> assertNull(JsonPath.read(tweetsJson, "$[0].origenId"), "No debe tener origenId")
-                        );
+                                () -> assertEquals(TEXTO_TWEET, JsonPath.read(tweetsJson, "$.tweets[0].texto")),
+                                () -> assertNull(JsonPath.read(tweetsJson, "$.tweets[0].origenId"),
+                                                "No debe tener origenId"));
         }
 
         @Test
@@ -117,33 +116,38 @@ class TweetControllerWebIT {
                 // Verificar que el retweet aparece en la lista del retweeter
                 var listarResult = mockMvc.perform(get("/tweets/usuario/" + retweeterId)
                                 .accept(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isOk())
                                 .andReturn();
+
+                // Debugging: print status and content if not 200
+                int status = listarResult.getResponse().getStatus();
                 String tweetsJson = listarResult.getResponse().getContentAsString();
-                                assertAll("Verificar retweet listado",
-                                        () -> {
-                                                Number origenIdNum = JsonPath.read(tweetsJson, "$[0].origenId");
-                                                assertEquals(tweetId, origenIdNum.longValue());
-                                                // Obtener el texto del tweet original usando el id de origen
-                                                var originalResult = mockMvc.perform(get("/tweets/usuario/" + usuarioId)
-                                                                .accept(MediaType.APPLICATION_JSON))
-                                                                .andExpect(status().isOk())
-                                                                .andReturn();
-                                                String originalTweetsJson = originalResult.getResponse().getContentAsString();
-                                                String textoOriginal = JsonPath.read(originalTweetsJson, "$[0].texto");
-                                                assertEquals(TEXTO_ORIGINAL, textoOriginal);
-                                        },
-                                        () -> assertNull(JsonPath.read(tweetsJson, "$[0].texto"), "El texto del retweet debe ser null")
-                                );
+
+                assertEquals(200, status, "Expected 200 but got " + status + " with content: " + tweetsJson);
+
+                assertAll("Verificar retweet listado",
+                                () -> {
+                                        Number origenIdNum = JsonPath.read(tweetsJson, "$.tweets[0].origenId");
+                                        assertEquals(tweetId, origenIdNum.longValue());
+                                        // Obtener el texto del tweet original usando el id de origen
+                                        var originalResult = mockMvc.perform(get("/tweets/usuario/" + usuarioId)
+                                                        .accept(MediaType.APPLICATION_JSON))
+                                                        .andExpect(status().isOk())
+                                                        .andReturn();
+                                        String originalTweetsJson = originalResult.getResponse().getContentAsString();
+                                        String textoOriginal = JsonPath.read(originalTweetsJson, "$.tweets[0].texto");
+                                        assertEquals(TEXTO_ORIGINAL, textoOriginal);
+                                },
+                                () -> assertNull(JsonPath.read(tweetsJson, "$.tweets[0].texto"),
+                                                "El texto del retweet debe ser null"));
         }
 
         @Test
         @DisplayName("POST /tweets con usuario inexistente retorna error")
         void crearTweet_usuarioInexistente_error() throws Exception {
                 mockMvc.perform(post("/tweets")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"usuarioId\":9999,\"texto\":\"fail\"}"))
-                        .andExpect(status().isBadRequest())
-                        .andExpect(content().contentType("text/plain;charset=UTF-8"));
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"usuarioId\":9999,\"texto\":\"fail\"}"))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(content().contentType("application/json"));
         }
 }

@@ -16,8 +16,9 @@ class TwitterServiceTest {
 
     @BeforeAll
     void setUp() {
-        //emf = new EmfBuilder().memory().withDropAndCreateDDL().withTestData().build();
-        emf = new EmfBuilder().memory().clientAndServer().withDropAndCreateDDL().build();
+        // emf = new
+        // EmfBuilder().memory().withDropAndCreateDDL().withTestData().build();
+        emf = new EmfBuilder().memory().withDropAndCreateDDL().build();
         service = new TwitterService(emf);
     }
 
@@ -75,7 +76,8 @@ class TwitterServiceTest {
         service.crearRetweet(roberto.getId(), tweetOriginal.getId());
         List<Tweet> tweetsRoberto = service.listarTweetsDeUsuario(roberto.getId());
         assertEquals(1, tweetsRoberto.size(), "roberto debe tener un retweet");
-        assertEquals(tweetOriginal.texto(), service.textoDeRetweet(tweetsRoberto.get(0).getId()), "El texto del retweet debe coincidir con el original");
+        assertEquals(tweetOriginal.texto(), service.textoDeRetweet(tweetsRoberto.get(0).getId()),
+                "El texto del retweet debe coincidir con el original");
     }
 
     @Test
