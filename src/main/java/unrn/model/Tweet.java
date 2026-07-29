@@ -1,54 +1,78 @@
 package unrn.model;
 
-import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-@Entity
-@Table(name = "tweets")
+import java.time.LocalDateTime;
+import java.util.Objects;
+
+@Document(collection = "tweets")
 @Setter(AccessLevel.PRIVATE)
 public class Tweet {
     static final String ERROR_TEXTO = "El texto del tweet debe tener entre 1 y 280 caracteres";
     static final String ERROR_RETWEET_PROPIO = "No se puede retweetear un tweet propio";
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id", nullable = false)
+    // Referencia de objeto en memoria: solo válida en la misma operación en la
+    // que se construye el Tweet (por ejemplo dentro de TwitterService). No se
+    // persiste ni se rehidrata al leer desde Mongo: para eso están autorId/
+    // autorUsername, que sí quedan guardados en el documento.
+    @Transient
     private Usuario autor;
 
-    @Column(name = "texto", nullable = true, length = 280)
+    private Long autorId;
+
+    private String autorUsername;
+
     private String text;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tweet_origen_id")
+    // Ídem autor: solo disponible justo después de construir el Tweet.
+    @Transient
     private Tweet origen;
 
-    @Column(name = "fecha_creacion", nullable = false, updatable = false)
-    private java.time.LocalDateTime fechaCreacion;
+    private Long origenId;
+
+    private String origenAutorUsername;
+
+    private String origenTexto;
+
+    private LocalDateTime origenFecha;
+
+    private LocalDateTime fechaCreacion;
 
     protected Tweet() {
-        // Constructor requerido por JPA
+        // Constructor requerido por el mapeo de Spring Data
     }
 
     // Tweet normal
     public Tweet(Usuario autor, String text) {
         assertTextoValido(text);
         this.autor = autor;
+        this.autorId = autor.getId();
+        this.autorUsername = autor.obtenerUserName();
         this.text = text;
         this.origen = null;
-        this.fechaCreacion = java.time.LocalDateTime.now();
+        this.fechaCreacion = LocalDateTime.now();
     }
 
     // Retweet
     public Tweet(Usuario autor, Tweet origen) {
         assertRetweetValido(autor, origen);
         this.autor = autor;
+        this.autorId = autor.getId();
+        this.autorUsername = autor.obtenerUserName();
         this.text = null;
         this.origen = origen;
-        this.fechaCreacion = java.time.LocalDateTime.now();
+        this.origenId = origen.getId();
+        this.origenAutorUsername = origen.getAutorUsername();
+        this.origenTexto = origen.texto();
+        this.origenFecha = origen.getFechaCreacion();
+        this.fechaCreacion = LocalDateTime.now();
     }
 
     private void assertTextoValido(String text) {
@@ -61,7 +85,13 @@ public class Tweet {
         if (origen == null) {
             throw new RuntimeException("El tweet de origen no puede ser nulo");
         }
-        if (origen.autor.equals(autor)) {
+        // Si el origen todavía tiene el objeto autor en memoria (recién
+        // construido) comparamos por identidad, igual que antes. Si viene de
+        // Mongo (autor transitorio no rehidratado), comparamos por autorId.
+        boolean mismoAutor = origen.autor != null
+                ? origen.autor.equals(autor)
+                : Objects.equals(origen.autorId, autor.getId());
+        if (mismoAutor) {
             throw new RuntimeException(ERROR_RETWEET_PROPIO);
         }
     }
@@ -75,14 +105,14 @@ public class Tweet {
     }
 
     public String textoDeRetweet() {
-        return this.origen.texto();
+        return this.origenTexto;
     }
 
     public Tweet origen() {
         return origen;
     }
 
-    public java.time.LocalDateTime getFechaCreacion() {
+    public LocalDateTime getFechaCreacion() {
         return fechaCreacion;
     }
 
@@ -90,7 +120,40 @@ public class Tweet {
         return id;
     }
 
-    // Setter requerido por JPA y para relación bidireccional
+    public Long getAutorId() {
+        return autorId;
+    }
+
+    public String getAutorUsername() {
+        return autorUsername;
+    }
+
+    public Long getOrigenId() {
+        return origenId;
+    }
+
+    public String getOrigenAutorUsername() {
+        return origenAutorUsername;
+    }
+
+    public String getOrigenTexto() {
+        return origenTexto;
+    }
+
+    public LocalDateTime getOrigenFecha() {
+        return origenFecha;
+    }
+
+    // Asigna el id generado por la secuencia de Mongo antes de guardar (Mongo
+    // no autogenera ids de tipo Long como hacía Hibernate).
+    public void asignarId(Long id) {
+        if (this.id != null) {
+            throw new IllegalStateException("El tweet ya tiene un id asignado");
+        }
+        this.id = id;
+    }
+
+    // Setter requerido para la relación bidireccional en memoria (Usuario.agregarTweet/eliminarTweet)
     protected void setAutor(Usuario autor) {
         this.autor = autor;
     }

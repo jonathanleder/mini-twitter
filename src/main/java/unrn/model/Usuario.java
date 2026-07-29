@@ -1,18 +1,16 @@
 package unrn.model;
 
-import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
-
-@Entity
-@Table(name = "usuarios")
+@Document(collection = "usuarios")
 @Setter(AccessLevel.PRIVATE)
 public class Usuario {
 
@@ -20,17 +18,18 @@ public class Usuario {
     static final String ERROR_USERNAME_INVALIDO = "El userName debe tener entre 5 y 25 caracteres";
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "username", unique = true, nullable = false)
+    @Indexed(unique = true)
     private String userName;
 
-    @OneToMany(mappedBy = "autor", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    // Los tweets de un usuario se consultan a la colección "tweets" por
+    // autorId; no se persisten embebidos en el documento del usuario.
+    @Transient
     private List<Tweet> tweets = new ArrayList<>();
 
     protected Usuario() {
-        // Constructor requerido por JPA
+        // Constructor requerido por el mapeo de Spring Data
     }
 
     public Usuario(String userName) {
@@ -69,12 +68,19 @@ public class Usuario {
         return id;
     }
 
-    // Setter solo para JPA
+    // Asigna el id generado por la secuencia de Mongo antes de guardar (Mongo
+    // no autogenera ids de tipo Long como hacía Hibernate).
+    public void asignarId(Long id) {
+        if (this.id != null) {
+            throw new IllegalStateException("El usuario ya tiene un id asignado");
+        }
+        this.id = id;
+    }
+
     protected void setUserName(String userName) {
         this.userName = userName;
     }
 
-    // Setter solo para JPA
     protected void setTweets(List<Tweet> tweets) {
         this.tweets = tweets;
     }

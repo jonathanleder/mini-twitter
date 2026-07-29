@@ -48,12 +48,13 @@ class TwitterGlobalExceptionHandlerIntegrationTest {
 
     @Test
     void whenMissingParameter_thenReturnsBadRequest() throws Exception {
-        // Act & Assert
+        // Un JSON válido pero sin usuarioId no es un error de parseo (los campos del
+        // record son nullables): el error real llega desde la lógica de negocio.
         mockMvc.perform(post("/tweets")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Parámetros inválidos"));
+                .andExpect(jsonPath("$.message").value("Usuario no encontrado"));
     }
 
     @Test

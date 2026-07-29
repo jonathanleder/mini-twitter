@@ -1,0 +1,16 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "mini-twitter-frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "C:\\Users\\jonyl\\proyectos-visual-studio-code\\mini-twitter-frontend",
+        "run",
+        "dev"
+      ],
+      "port": 5173
+    }
+  ]
+}

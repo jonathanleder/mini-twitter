@@ -8,6 +8,7 @@ public record TweetDto(
         String autorUsername,
         LocalDateTime fecha,
         Long origenId,
+        LocalDateTime origenFecha,
         String tweetOriginalTexto,
         String usuarioOriginal,
         String usuarioRetweet,

@@ -1,12 +1,12 @@
 package unrn.web;
 
-import jakarta.persistence.EntityManagerFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import unrn.service.TwitterService;
@@ -16,11 +16,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(classes = unrn.main.Main.class)
 @AutoConfigureMockMvc
-@org.springframework.test.context.ActiveProfiles("test-integracion")
 public class UsuarioControllerWebIT {
 
         @Autowired
-        private EntityManagerFactory emf;
+        private MongoTemplate mongoTemplate;
         @Autowired
         private TwitterService twitterService;
         @Autowired
@@ -29,7 +28,7 @@ public class UsuarioControllerWebIT {
         @BeforeEach
         void setUp() throws Exception {
                 // Crea un usuario antes de cada test
-                emf.getSchemaManager().truncate();
+                mongoTemplate.getDb().drop();
 
                 mockMvc.perform(post("/usuarios")
                                 .contentType(MediaType.APPLICATION_JSON)

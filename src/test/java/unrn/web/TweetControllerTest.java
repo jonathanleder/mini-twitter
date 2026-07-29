@@ -78,36 +78,16 @@ class TweetControllerTest {
     void listarTweetsDeUsuario_ValidUserId_ReturnsTweets() {
         // Arrange
         Long userId = 1L;
-        Tweet tweet1 = mock(Tweet.class);
-        Tweet tweet2 = mock(Tweet.class);
-        Tweet tweetOriginal = mock(Tweet.class);
-        unrn.model.Usuario author = mock(unrn.model.Usuario.class);
-        unrn.model.Usuario autorOriginal = mock(unrn.model.Usuario.class);
+        java.time.LocalDateTime fechaOriginal = java.time.LocalDateTime.now().minusHours(2);
+        TweetDto tweet1 = new TweetDto(101L, "First tweet", "testuser",
+                java.time.LocalDateTime.now(), null, null, null, null, null, false);
+        TweetDto tweet2 = new TweetDto(102L, null, "testuser",
+                java.time.LocalDateTime.now(), 101L, fechaOriginal, "Original text", "originaluser", "testuser", true);
 
-        when(author.obtenerUserName()).thenReturn("testuser");
-        when(autorOriginal.obtenerUserName()).thenReturn("originaluser");
-
-        when(twitterService.listarTweetsDeUsuarioConLimit(userId, 15, 0))
+        when(twitterService.listarTweetsDeUsuarioConLimitDto(userId, 15, 0))
                 .thenReturn(List.of(tweet1, tweet2));
         when(twitterService.contarTweetsDeUsuario(userId))
                 .thenReturn(2);
-
-        // Tweet normal
-        when(tweet1.getId()).thenReturn(101L);
-        when(tweet1.texto()).thenReturn("First tweet");
-        when(tweet1.autor()).thenReturn(author);
-        when(tweet1.getFechaCreacion()).thenReturn(java.time.LocalDateTime.now());
-        when(tweet1.origen()).thenReturn(null);
-
-        // Retweet
-        when(tweet2.getId()).thenReturn(102L);
-        when(tweet2.texto()).thenReturn(null);
-        when(tweet2.autor()).thenReturn(author);
-        when(tweet2.getFechaCreacion()).thenReturn(java.time.LocalDateTime.now());
-        when(tweet2.origen()).thenReturn(tweetOriginal);
-        when(tweetOriginal.getId()).thenReturn(101L);
-        when(tweetOriginal.texto()).thenReturn("Original text");
-        when(tweetOriginal.autor()).thenReturn(autorOriginal);
 
         // Act
         ResponseEntity<?> response = tweetController.listarTweetsDeUsuario(userId, 15, 0);
@@ -130,6 +110,7 @@ class TweetControllerTest {
         assertEquals("Original text", responseDto.tweets().get(1).tweetOriginalTexto());
         assertEquals("originaluser", responseDto.tweets().get(1).usuarioOriginal());
         assertEquals("testuser", responseDto.tweets().get(1).usuarioRetweet());
+        assertEquals(fechaOriginal, responseDto.tweets().get(1).origenFecha());
     }
 
     @Test
@@ -137,20 +118,22 @@ class TweetControllerTest {
         // Arrange
         Tweet tweet1 = mock(Tweet.class);
         Tweet tweet2 = mock(Tweet.class);
-        unrn.model.Usuario author = mock(unrn.model.Usuario.class);
-        when(author.obtenerUserName()).thenReturn("testuser");
         when(twitterService.listarTodosLosTweets())
                 .thenReturn(List.of(tweet1, tweet2));
         when(tweet1.getId()).thenReturn(101L);
         when(tweet1.texto()).thenReturn("First tweet");
-        when(tweet1.autor()).thenReturn(author);
+        when(tweet1.getAutorUsername()).thenReturn("testuser");
         when(tweet1.getFechaCreacion()).thenReturn(java.time.LocalDateTime.now());
-        when(tweet1.origen()).thenReturn(null);
+        when(tweet1.getOrigenId()).thenReturn(null);
+        // tweet2 es un retweet, para cubrir la rama esRetweet=true del mapper
         when(tweet2.getId()).thenReturn(102L);
-        when(tweet2.texto()).thenReturn("Second tweet");
-        when(tweet2.autor()).thenReturn(author);
+        when(tweet2.texto()).thenReturn(null);
+        when(tweet2.getAutorUsername()).thenReturn("retweeter");
         when(tweet2.getFechaCreacion()).thenReturn(java.time.LocalDateTime.now());
-        when(tweet2.origen()).thenReturn(null);
+        when(tweet2.getOrigenId()).thenReturn(101L);
+        when(tweet2.getOrigenFecha()).thenReturn(java.time.LocalDateTime.now().minusHours(1));
+        when(tweet2.getOrigenTexto()).thenReturn("First tweet");
+        when(tweet2.getOrigenAutorUsername()).thenReturn("testuser");
 
         // Act
         ResponseEntity<?> response = tweetController.listarTodosLosTweets();
@@ -167,11 +150,92 @@ class TweetControllerTest {
         assertEquals("testuser", tweets.get(0).autorUsername());
         assertNull(tweets.get(0).origenId());
         assertFalse(tweets.get(0).esRetweet());
+
         assertEquals(102L, tweets.get(1).id());
-        assertEquals("Second tweet", tweets.get(1).texto());
-        assertEquals("testuser", tweets.get(1).autorUsername());
-        assertNull(tweets.get(1).origenId());
-        assertFalse(tweets.get(1).esRetweet());
+        assertNull(tweets.get(1).texto());
+        assertEquals(101L, tweets.get(1).origenId());
+        assertEquals("First tweet", tweets.get(1).tweetOriginalTexto());
+        assertEquals("testuser", tweets.get(1).usuarioOriginal());
+        assertEquals("retweeter", tweets.get(1).usuarioRetweet());
+        assertTrue(tweets.get(1).esRetweet());
+    }
+
+    @Test
+    void listarFeedPaginado_ValidRequest_ReturnsFeedResponse() {
+        // Arrange
+        TweetDto tweet1 = new TweetDto(201L, "Feed tweet", "testuser",
+                java.time.LocalDateTime.now(), null, null, null, null, null, false);
+        when(twitterService.listarFeedPaginadoDto(0, 10)).thenReturn(List.of(tweet1));
+        when(twitterService.contarTweetsNormales()).thenReturn(21);
+
+        // Act
+        ResponseEntity<?> response = tweetController.listarFeedPaginado(0, 10);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody() instanceof unrn.DTOs.FeedResponseDto);
+        var feed = (unrn.DTOs.FeedResponseDto) response.getBody();
+        assertEquals(1, feed.content().size());
+        assertEquals(3, feed.totalPages(), "21 tweets con size 10 son 3 páginas");
+        assertEquals(0, feed.currentPage());
+        assertEquals(21, feed.totalElements());
+        assertTrue(feed.hasNext(), "La página 0 de 3 debe tener siguiente");
+        assertFalse(feed.hasPrevious(), "La página 0 no debe tener anterior");
+    }
+
+    @Test
+    void listarFeedPaginado_UltimaPagina_NoTieneSiguiente() {
+        // Arrange: página 2 (la última de 3), sí tiene anterior y no tiene siguiente
+        when(twitterService.listarFeedPaginadoDto(2, 10)).thenReturn(List.of());
+        when(twitterService.contarTweetsNormales()).thenReturn(21);
+
+        // Act
+        ResponseEntity<?> response = tweetController.listarFeedPaginado(2, 10);
+
+        // Assert
+        var feed = (unrn.DTOs.FeedResponseDto) response.getBody();
+        assertFalse(feed.hasNext(), "La última página no debe tener siguiente");
+        assertTrue(feed.hasPrevious(), "La página 2 debe tener anterior");
+    }
+
+    @Test
+    void listarFeedPaginado_PageYSizeInvalidos_UsaValoresPorDefecto() {
+        // Arrange: page negativo y size fuera de rango deben corregirse a 0 y 10
+        when(twitterService.listarFeedPaginadoDto(0, 10)).thenReturn(List.of());
+        when(twitterService.contarTweetsNormales()).thenReturn(0);
+
+        // Act
+        tweetController.listarFeedPaginado(-1, 0);
+
+        // Assert
+        verify(twitterService).listarFeedPaginadoDto(0, 10);
+        verify(twitterService).contarTweetsNormales();
+    }
+
+    @Test
+    void listarTweetsDeUsuario_LimitYOffsetInvalidos_UsaValoresPorDefecto() {
+        // Arrange: limit fuera de rango y offset negativo deben corregirse a 15 y 0
+        when(twitterService.listarTweetsDeUsuarioConLimitDto(1L, 15, 0)).thenReturn(List.of());
+        when(twitterService.contarTweetsDeUsuario(1L)).thenReturn(0);
+
+        // Act
+        tweetController.listarTweetsDeUsuario(1L, 500, -10);
+
+        // Assert
+        verify(twitterService).listarTweetsDeUsuarioConLimitDto(1L, 15, 0);
+    }
+
+    @Test
+    void eliminarTweet_ValidId_ReturnsNoContent() {
+        // Arrange
+        doNothing().when(twitterService).eliminarTweet(1L);
+
+        // Act
+        ResponseEntity<?> response = tweetController.eliminarTweet(1L);
+
+        // Assert
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        verify(twitterService, times(1)).eliminarTweet(1L);
     }
 
     @Test
@@ -179,7 +243,7 @@ class TweetControllerTest {
         // Arrange
         Long userId = 1L;
         String errorMessage = "Usuario no encontrado";
-        when(twitterService.listarTweetsDeUsuarioConLimit(userId, 15, 0))
+        when(twitterService.listarTweetsDeUsuarioConLimitDto(userId, 15, 0))
                 .thenThrow(new RuntimeException(errorMessage));
 
         // Act & Assert

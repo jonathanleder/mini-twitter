@@ -1,6 +1,6 @@
 # Mini Twitter API
 
-Una implementación de una API RESTful para un servicio de microblogging similar a Twitter, construida con Java 21, Spring Boot 3.5.5 y JPA/Hibernate 7.0.7 con MySQL.
+Una implementación de una API RESTful para un servicio de microblogging similar a Twitter, construida con Java 21, Spring Boot 3.5.5 y Spring Data MongoDB.
 
 ## 📝 Características
 
@@ -11,17 +11,17 @@ Una implementación de una API RESTful para un servicio de microblogging similar
 - ✅ Tweets por usuario con carga progresiva (limit/offset)
 - ✅ DTOs enriquecidos para frontend
 - ✅ Validación de datos en el constructor (objetos válidos siempre)
-- ✅ Pruebas unitarias y de integración (57/61 tests pasando)
+- ✅ Pruebas unitarias y de integración (79 tests, 98.3% cobertura de instrucciones)
 - ✅ Manejo centralizado de excepciones
 - ✅ CORS habilitado para frontend local
 
 ## 🚀 Tecnologías
 
 - **Backend**: Java 21, Spring Boot 3.5.5
-- **Base de datos**: 
-  - MySQL 8.0 (desarrollo/producción)
-  - H2 en memoria (tests automáticos)
-- **ORM**: JPA 3.2, Hibernate 7.0.7
+- **Base de datos**:
+  - MongoDB 7 (desarrollo/producción)
+  - MongoDB embebido vía Flapdoodle (tests automáticos, no requiere Docker)
+- **Acceso a datos**: Spring Data MongoDB
 - **Testing**: JUnit 5.13, MockMvc
 - **Herramientas**: Lombok 1.18.38, Maven, Docker, JaCoCo (cobertura)
 
@@ -29,7 +29,7 @@ Una implementación de una API RESTful para un servicio de microblogging similar
 
 - Java 21 JDK
 - Maven 3.9+
-- Docker y Docker Compose (para MySQL en desarrollo)
+- Docker y Docker Compose (para MongoDB en desarrollo)
 - Git
 
 ## 🛠️ Instalación y Configuración
@@ -46,24 +46,23 @@ cd mini-twitter
 Crear archivo `.env` en la raíz del proyecto:
 
 ```env
-MYSQL_DATABASE=mini-twitter
-MYSQL_USER=user
-MYSQL_PASSWORD=1234
-MYSQL_ROOT_PASSWORD=1234
+MONGO_DATABASE=mini-twitter
+MONGO_USER=user
+MONGO_PASSWORD=1234
 DB_HOST=localhost
-DB_PORT=3306
-PHPMYADMIN_PORT=8091
+DB_PORT=27017
+MONGO_EXPRESS_PORT=8091
 ```
 
 ### 3. Levantar la base de datos (Docker)
 
 ```bash
-docker-compose up -d
+docker compose up -d mongo
 ```
 
 Esto levantará:
-- **MySQL 8.0** en puerto 3306
-- **PHPMyAdmin** en http://localhost:8091 (usuario: root, contraseña: 1234)
+- **MongoDB 7** en puerto 27017
+- **Mongo Express** en http://localhost:8091 (usuario/contraseña: los definidos en `.env`)
 
 ### 4. Compilar el proyecto
 
@@ -94,10 +93,9 @@ mini-twitter/
 ├── src/
 │   ├── main/
 │   │   ├── java/unrn/
-│   │   │   ├── main/              # Punto de entrada y configuración
-│   │   │   │   ├── Main.java
-│   │   │   │   └── AppConfiguration.java (perfil MySQL/H2)
-│   │   │   ├── model/             # Entidades de dominio
+│   │   │   ├── main/              # Punto de entrada
+│   │   │   │   └── Main.java (@EnableMongoRepositories)
+│   │   │   ├── model/             # Entidades de dominio (documentos Mongo)
 │   │   │   │   ├── Usuario.java
 │   │   │   │   └── Tweet.java
 │   │   │   ├── service/           # Lógica de negocio
@@ -110,26 +108,25 @@ mini-twitter/
 │   │   │   │   ├── TweetDto.java
 │   │   │   │   ├── FeedResponseDto.java
 │   │   │   │   └── NuevoTweet.java
-│   │   │   ├── repositorios/      # Acceso a datos (JPA)
-│   │   │   │   ├── TweetRepository.java
-│   │   │   │   ├── UsuarioRepository.java
-│   │   │   │   └── JpaTweetRepository.java
-│   │   │   ├── util/              # Utilidades
-│   │   │   │   ├── EmfBuilder.java (H2)
-│   │   │   │   └── EmfMySQLBuilder.java (MySQL)
+│   │   │   ├── repositorios/      # Acceso a datos (Spring Data MongoDB)
+│   │   │   │   ├── TweetRepository.java / UsuarioRepository.java (contratos de dominio)
+│   │   │   │   ├── MongoTweetRepository.java / MongoUsuarioRepository.java (Spring Data)
+│   │   │   │   ├── TweetRepositoryImpl.java / UsuarioRepositoryImpl.java
+│   │   │   │   └── SequenceGeneratorService.java (simula autoincremento de Long)
 │   │   │   └── config/
 │   │   │       └── DataInitializer.java (carga datos de prueba)
 │   │   └── resources/
-│   │       ├── application.properties (MySQL)
-│   │       └── data.sql (SQL inicial)
+│   │       └── application.properties (Mongo, vía spring.data.mongodb.uri)
 │   └── test/
 │       ├── java/unrn/             # Tests unitarios e integración
-│       │   ├── web/
-│       │   ├── service/
-│       │   └── model/
+│       │   ├── web/                (controllers, *WebIT, exception handler)
+│       │   ├── service/            (TwitterServiceTest, contra Mongo embebido)
+│       │   ├── model/              (Usuario/Tweet, dominio puro)
+│       │   ├── repositorios/       (DatabaseSequenceTest)
+│       │   └── config/             (DataInitializerTest)
 │       └── resources/
-│           └── application.properties (H2)
-├── compose.yaml                   # Docker Compose (MySQL + PHPMyAdmin)
+│           └── application.properties (Mongo embebido/Flapdoodle)
+├── compose.yaml                   # Docker Compose (MongoDB + Mongo Express)
 ├── .env                          # Variables de entorno
 ├── .gitignore
 ├── pom.xml
@@ -220,6 +217,7 @@ Respuesta (200 OK):
       "autorUsername": "juan_perez",
       "fecha": "2025-11-30T18:20:19.006957",
       "origenId": null,
+      "origenFecha": null,
       "tweetOriginalTexto": null,
       "usuarioOriginal": null,
       "usuarioRetweet": null,
@@ -251,6 +249,7 @@ Respuesta (200 OK):
       "autorUsername": "juan_perez",
       "fecha": "2025-11-30T18:20:19.006957",
       "origenId": null,
+      "origenFecha": null,
       "tweetOriginalTexto": null,
       "usuarioOriginal": null,
       "usuarioRetweet": null,
@@ -264,6 +263,8 @@ Respuesta (200 OK):
 }
 ```
 
+> `origenFecha` solo tiene valor cuando `esRetweet` es `true`: es la fecha de creación del tweet **original**, distinta de `fecha` (que es cuándo se hizo el retweet).
+
 #### Listar todos los tweets
 
 ```http
@@ -274,23 +275,21 @@ GET /tweets
 
 ## 🧪 Testing
 
+**79 tests, 98.3% de cobertura de instrucciones (97.1% de líneas)**, medida con JaCoCo.
+
+- Tests de dominio puro (`unrn.model`): validaciones de `Usuario`/`Tweet`, sin tocar base de datos.
+- Tests de servicio (`unrn.service.TwitterServiceTest`): `@SpringBootTest` contra MongoDB embebido (Flapdoodle), cubren feed paginado, cascada de borrado de retweets, casos de error (usuario/tweet inexistente), etc.
+- Tests de controllers con Mockito (`TweetControllerTest`, `UsuarioControllerTest`): mockean `TwitterService`, no tocan la base.
+- Tests de integración de la capa web (`*WebIT`): `@SpringBootTest` + `MockMvc` end-to-end contra Mongo embebido.
+- Tests del manejador global de excepciones (`TwitterGlobalExceptionHandlerTest`/`TestUnit`).
+
 ### Ejecutar todos los tests
 
 ```bash
 mvn test
 ```
 
-### Ejecutar solo tests unitarios
-
-```bash
-mvn test -Dtest=*Test
-```
-
-### Ejecutar solo tests de integración
-
-```bash
-mvn test -Dtest=*IT
-```
+Corre los 79 tests (incluye los `*WebIT.java` y `*TestUnit.java`, agregados explícitamente en el `<includes>` de `maven-surefire-plugin` en `pom.xml` porque sus nombres no matchean los patrones por defecto de Surefire).
 
 ### Generar reporte de cobertura
 
@@ -298,76 +297,75 @@ mvn test -Dtest=*IT
 mvn clean test jacoco:report
 ```
 
-El reporte estará en: `target/site/jacoco/index.html`
-
-**Estado actual**: 57/61 tests pasando (93.4% éxito)
+El reporte estará en: `target/site/jacoco/index.html`. Cobertura por clase: 100% en la mayoría; `Main` (37.5%, el `public static void main` no se testea) y un puñado de setters protegidos sin uso real en `Usuario`/`Tweet` (artefactos de compatibilidad, Spring Data los popula por reflexión) quedan deliberadamente sin cubrir.
 
 ---
 
-## 🗂️ Estructura de Base de Datos
+## 🗂️ Estructura de Base de Datos (MongoDB)
 
-### Tabla: usuarios
-```sql
-CREATE TABLE usuarios (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  username VARCHAR(255) NOT NULL UNIQUE
-);
+### Colección: `usuarios`
+```json
+{ "_id": 1, "userName": "juan_perez" }
+```
+`userName` tiene un índice único (`@Indexed(unique = true)`).
+
+### Colección: `tweets`
+Los tweets guardan el autor y, si son un retweet, el tweet de origen **denormalizados** (username y texto embebidos), para evitar joins en cada lectura:
+```json
+{
+  "_id": 21,
+  "autorId": 2,
+  "autorUsername": "maria_garcia",
+  "text": null,
+  "origenId": 1,
+  "origenAutorUsername": "juan_perez",
+  "origenTexto": "¡Hola a todos!",
+  "fechaCreacion": "2026-07-28T18:57:44.16"
+}
 ```
 
-### Tabla: tweets
-```sql
-CREATE TABLE tweets (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  usuario_id BIGINT NOT NULL,
-  texto VARCHAR(500) NOT NULL,
-  fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-  tweet_origen_id BIGINT,
-  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
-  FOREIGN KEY (tweet_origen_id) REFERENCES tweets(id) ON DELETE CASCADE
-);
+### Colección: `database_sequences`
+Simula el autoincremento de `Long` que antes generaba Hibernate (Mongo no autogenera IDs numéricos):
+```json
+{ "_id": "tweets", "seq": 21 }
 ```
 
 ---
 
 ## 🔄 Dual Environment Setup
 
-### Para desarrollo (MySQL persistente)
+### Para desarrollo (MongoDB persistente)
 
 ```bash
+docker compose up -d mongo
 mvn spring-boot:run
 ```
 
-Usa la configuración de `src/main/resources/application.properties` (MySQL)
+Usa la configuración de `src/main/resources/application.properties` (`spring.data.mongodb.uri`)
 
-### Para tests (H2 en memoria)
+### Para tests (MongoDB embebido)
 
 ```bash
 mvn test
 ```
 
-Usa la configuración de `src/test/resources/application.properties` (H2)
+No requiere Docker: `src/test/resources/application.properties` deja `spring.data.mongodb.uri` sin definir, por lo que Spring Boot autoconfigura un `mongod` embebido (Flapdoodle) para cada corrida.
 
 ---
 
 ## 🆘 Troubleshooting
 
-### "Connection refused" en MySQL
+### "Connection refused" contra MongoDB
 
 Verificar que Docker está ejecutando:
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 Si no está corriendo:
 ```bash
-docker-compose up -d
+docker compose up -d mongo
 ```
-
-### "Table doesn't exist"
-
-Hibernate debería crear las tablas automáticamente. Si no:
-1. Verificar que `spring.jpa.hibernate.ddl-auto=create` está en `application.properties`
-2. Reiniciar la aplicación
 
 ### Tests fallan en Windows
 
@@ -375,12 +373,6 @@ Algunos tests pueden ser sensibles a rutas. Intentar:
 ```bash
 mvn clean test -DforkCount=1
 ```
-
-### "Could not initialize proxy" error en la API
-
-Este error ocurre cuando Hibernate intenta cargar datos de una entidad relacionada fuera de una transacción. Está resuelto en la versión actual:
-- Los métodos que retornan DTOs (`listarFeedPaginadoDto`, `listarTweetsDeUsuarioConLimitDto`) mapean los datos **dentro** de la transacción JPA
-- Esto asegura que todos los proxies de Hibernate se inicialicen antes de cerrar la sesión
 
 ---
 
@@ -391,7 +383,7 @@ Este error ocurre cuando Hibernate intenta cargar datos de una entidad relaciona
 - Usa el patrón Tell-Don't-Ask
 - No hay getters/setters innecesarios (encapsulación fuerte)
 - Los DTOs separan la API del modelo de dominio
-- Lazy loading issues resueltos con mapeo dentro de transacciones
+- El acceso a datos usa Spring Data MongoDB; los campos `autor`/`origen` de `Tweet` son transitorios (solo viven en memoria durante la operación que los crea) y se complementan con campos denormalizados (`autorUsername`, `origenTexto`, etc.) que sí se persisten
 
 ---
 

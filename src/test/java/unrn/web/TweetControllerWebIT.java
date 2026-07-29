@@ -11,7 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.jayway.jsonpath.JsonPath;
 
-import jakarta.persistence.EntityManagerFactory;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -21,7 +21,6 @@ import java.util.List;
 
 @SpringBootTest(classes = unrn.main.Main.class)
 @AutoConfigureMockMvc
-@org.springframework.test.context.ActiveProfiles("test-integracion")
 
 class TweetControllerWebIT {
         private static final String USERNAME = "tweetuser";
@@ -30,7 +29,7 @@ class TweetControllerWebIT {
         private static final String TEXTO_ORIGINAL = "Original";
 
         @Autowired
-        private EntityManagerFactory emf;
+        private MongoTemplate mongoTemplate;
 
         @Autowired
         private MockMvc mockMvc;
@@ -39,7 +38,7 @@ class TweetControllerWebIT {
 
         @BeforeEach
         void setUp() throws Exception {
-                emf.getSchemaManager().truncate();
+                mongoTemplate.getDb().drop();
                 usuarioId = crearUsuarioYObtenerId(USERNAME);
         }
 

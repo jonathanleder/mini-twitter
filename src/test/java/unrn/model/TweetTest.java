@@ -76,4 +76,28 @@ class TweetTest {
     var ex = assertThrows(RuntimeException.class, () -> new Tweet(usuario, (Tweet) null), "No se puede crear un retweet con origen nulo");
         assertEquals("El tweet de origen no puede ser nulo", ex.getMessage());
     }
+
+    @Test
+    @DisplayName("asignarId falla si el tweet ya tiene un id asignado")
+    void asignarId_tweetYaTieneId_lanzaExcepcion() {
+        // Setup
+        Usuario usuario = new Usuario("usuarioValido");
+        Tweet tweet = new Tweet(usuario, "Hola mundo");
+        tweet.asignarId(1L);
+        // Ejercitación & Verificación
+        assertThrows(IllegalStateException.class, () -> tweet.asignarId(2L),
+                "No se puede reasignar el id de un tweet ya persistido");
+    }
+
+    @Test
+    @DisplayName("El tweet guarda el id del autor al construirse")
+    void getAutorId_devuelveIdDelAutor() {
+        // Setup
+        Usuario usuario = new Usuario("usuarioValido");
+        usuario.asignarId(7L);
+        // Ejercitación
+        Tweet tweet = new Tweet(usuario, "Hola mundo");
+        // Verificación
+        assertEquals(7L, tweet.getAutorId(), "El autorId debe coincidir con el id del usuario autor");
+    }
 }

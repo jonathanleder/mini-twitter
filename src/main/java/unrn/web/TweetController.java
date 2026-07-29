@@ -19,16 +19,18 @@ public class TweetController {
     }
 
     private TweetDto mapTweetToDto(unrn.model.Tweet t) {
+        boolean esRetweet = t.getOrigenId() != null;
         return new TweetDto(
                 t.getId(),
                 t.texto(),
-                t.autor().obtenerUserName(),
+                t.getAutorUsername(),
                 t.getFechaCreacion(),
-                t.origen() != null ? t.origen().getId() : null,
-                t.origen() != null ? t.origen().texto() : null,
-                t.origen() != null ? t.origen().autor().obtenerUserName() : null,
-                t.origen() != null ? t.autor().obtenerUserName() : null,
-                t.origen() != null);
+                t.getOrigenId(),
+                t.getOrigenFecha(),
+                t.getOrigenTexto(),
+                t.getOrigenAutorUsername(),
+                esRetweet ? t.getAutorUsername() : null,
+                esRetweet);
     }
 
     @PostMapping

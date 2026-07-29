@@ -1,33 +1,35 @@
 services:
-  mysql:
-    container_name: 'mini-twitter-mysql'
-    image: 'mysql:8.0'
+  mongo:
+    container_name: 'mini-twitter-mongo'
+    image: 'mongo:7'
     restart: always
     environment:
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_USER=${MYSQL_USER}
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_DATABASE}
     networks:
       - db_network
     ports:
-      - '${DB_PORT:-3306}:3306'
+      - '${DB_PORT:-27017}:27017'
+    volumes:
+      - mongo_data:/data/db
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       timeout: 20s
       retries: 10
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
+  mongo-express:
+    image: mongo-express:latest
     restart: always
     depends_on:
-      - mysql
+      - mongo
     environment:
-      PMA_HOST: mysql
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD}
+      ME_CONFIG_MONGODB_SERVER: mongo
     networks:
       - db_network
     ports:
-      - "${PHPMYADMIN_PORT:-8081}:80"
+      - "${MONGO_EXPRESS_PORT:-8091}:8081"
 
 networks:
   db_network:
@@ -35,4 +37,4 @@ networks:
     #external: true
 
 volumes:
-  mysql_data:
+  mongo_data:

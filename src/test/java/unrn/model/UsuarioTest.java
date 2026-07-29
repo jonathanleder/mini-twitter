@@ -81,4 +81,26 @@ class UsuarioTest {
         // Verificación
         assertTrue(usuario.obtenerTweets().isEmpty(), "La lista de tweets debe quedar vacía tras eliminar todos");
     }
+
+    @Test
+    @DisplayName("Agregar un tweet nulo lanza excepción")
+    void agregarTweet_tweetNulo_lanzaExcepcion() {
+        // Setup
+        Usuario usuario = new Usuario("usuarioValido");
+        // Ejercitación & Verificación
+        var ex = assertThrows(RuntimeException.class, () -> usuario.agregarTweet(null),
+                "No se puede agregar un tweet nulo");
+        assertEquals("No se puede agregar un tweet nulo", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("asignarId falla si el usuario ya tiene un id asignado")
+    void asignarId_usuarioYaTieneId_lanzaExcepcion() {
+        // Setup
+        Usuario usuario = new Usuario("usuarioValido");
+        usuario.asignarId(1L);
+        // Ejercitación & Verificación
+        assertThrows(IllegalStateException.class, () -> usuario.asignarId(2L),
+                "No se puede reasignar el id de un usuario ya persistido");
+    }
 }
